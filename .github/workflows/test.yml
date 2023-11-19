@@ -1,0 +1,50 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    timeout-minutes: 25
+    environment: staging
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js and NPM
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: npm install
+        run: |
+          npm install
+
+      - name: npm build
+        env:
+          # Required build time src env vars
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          MP_PROJECT_TOKEN: ${{ secrets.MP_PROJECT_TOKEN }}
+          MP_PROJECT_ENV: ${{ vars.MP_PROJECT_ENV }}
+          NICENODE_ENV: ${{ vars.NICENODE_ENV }}
+        run: |
+          npm run build
+
+      - name: npm lint
+        run: |
+          npm run lint
+
+      - name: npm exec tsc
+        run: |
+          npm exec tsc --verbose
+
+      - name: npm test
+        run: |
+          npm test
